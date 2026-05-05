@@ -1,0 +1,2 @@
+# StudRadar-MVP
+StudRadar Platform
