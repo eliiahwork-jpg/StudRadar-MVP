@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ru" data-mode="student">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Исполнители — СтудРадар</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    /* ── Performers-specific styles ── */
+    .perf-hero {
+      padding: clamp(40px,5vw,72px) 0 0;
+    }
+    .perf-hero__top {
+      display: flex; align-items: baseline; gap: 18px;
+      margin-bottom: 32px;
+    }
+    .perf-hero__count {
+      font-family: 'Onest','Manrope',sans-serif;
+      font-size: 28px;
+      color: var(--c-orange);
+      letter-spacing: 0.02em;
+    }
+    .perf-filters {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-bottom: 48px;
+    }
+    .perf-filter {
+      font-family: 'Manrope',sans-serif;
+      font-weight: 500;
+      font-size: 15px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      background: var(--c-white);
+      border: 1.5px solid var(--c-border);
+      color: var(--c-ink);
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .perf-filter:hover { border-color: var(--c-blue); color: var(--c-blue); }
+    .perf-filter.active {
+      background: var(--c-blue-deep);
+      color: #fff;
+      border-color: var(--c-blue-deep);
+    }
+    [data-mode="customer"] .perf-filter.active {
+      background: var(--c-orange);
+      border-color: var(--c-orange);
+    }
+    .perf-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      padding-bottom: clamp(60px,8vw,120px);
+    }
+    @media (max-width: 1400px) { .perf-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 1080px) { .perf-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 700px)  { .perf-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 420px)  { .perf-grid { grid-template-columns: 1fr; } }
+
+    /* Student card */
+    .sc {
+      background: var(--c-white);
+      border: 1px solid var(--c-border);
+      border-radius: 24px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+      text-decoration: none; color: inherit;
+    }
+    .sc:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.10);
+      border-color: var(--c-blue);
+    }
+    [data-mode="customer"] .sc:hover { border-color: var(--c-orange); }
+    .sc__photo {
+      aspect-ratio: 4/3;
+      background: linear-gradient(135deg,#E0ECFF 0%,#C0D4F5 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .sc__photo img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .sc__photo--placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Tektur',monospace;
+      font-weight: 700;
+      font-size: clamp(28px,2.6vw,40px);
+      color: var(--c-blue-deep);
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+    }
+    .sc__rating {
+      position: absolute; top: 12px; right: 12px;
+      background: rgba(255,255,255,.95);
+      border-radius: 999px;
+      padding: 5px 12px;
+      display: flex; align-items: center; gap: 5px;
+      font-family: 'JetBrains Mono',monospace;
+      font-size: 13px; font-weight: 700;
+      color: var(--c-orange-deep);
+    }
+    .sc__pro-badge {
+      position: absolute; top: 12px; left: 12px;
+      background: var(--c-blue-deep);
+      color: #fff;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-family: 'JetBrains Mono',monospace;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .sc__body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .sc__name {
+      font-family: 'Tektur',monospace;
+      font-weight: 700;
+      font-size: 16px;
+      text-transform: uppercase;
+      color: var(--c-navy);
+      letter-spacing: -0.01em;
+      margin: 0;
+      line-height: 1.05;
+    }
+    .sc__role {
+      font-size: 12.5px;
+      color: var(--c-mute);
+      line-height: 1.3;
+    }
+    .sc__skills {
+      display: flex; flex-wrap: wrap; gap: 5px;
+      margin-top: 0;
+    }
+    .sc__skill {
+      font-size: 11px;
+      background: var(--c-cream);
+      padding: 3px 9px;
+      border-radius: 999px;
+      color: var(--c-ink);
+    }
+    .sc__footer {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid var(--c-border);
+    }
+    .sc__tasks {
+      font-family: 'JetBrains Mono',monospace;
+      font-size: 12px;
+      color: var(--c-mute);
+    }
+    .sc__tasks strong {
+      font-family: 'Tektur',monospace;
+      font-size: 16px;
+      color: var(--c-blue-deep);
+    }
+    [data-mode="customer"] .sc__tasks strong { color: var(--c-orange-deep); }
+    .sc__arrow {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--c-cream);
+      display: grid; place-items: center;
+      font-family: 'JetBrains Mono',monospace;
+      font-size: 14px;
+      color: var(--c-ink);
+      transition: background .15s, color .15s;
+    }
+    .sc:hover .sc__arrow { background: var(--c-blue-deep); color: #fff; }
+    [data-mode="customer"] .sc:hover .sc__arrow { background: var(--c-orange); }
+
+    /* Search bar */
+    .perf-search {
+      display: flex; gap: 12px; align-items: center;
+      margin-bottom: 24px;
+    }
+    .perf-search__input {
+      flex: 1;
+      font-family: 'Manrope',sans-serif;
+      font-size: 16px;
+      border: 1.5px solid var(--c-border);
+      background: var(--c-white);
+      padding: 14px 20px;
+      border-radius: 14px;
+      color: var(--c-ink);
+      transition: border-color .15s;
+    }
+    .perf-search__input:focus { outline: none; border-color: var(--c-blue); }
+    .perf-search__input::placeholder { color: var(--c-mute); }
+
+    /* section label */
+    .perf-section-label {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 24px;
+    }
+    .perf-section-label__arrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 14px;
+      color: var(--c-mute);
+      text-decoration: none;
+    }
+    .perf-section-label__arrow:hover { color: var(--c-blue); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" src="components/icons.jsx"></script>
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+
+    /* ── data ─────────────────────────────────────── */
+    const STUDENTS = [
+      { id:1, initials:"МИ", name:"Мария И.", role:"Лингвистика · Перевод и переводоведение", course:"2 курс · ЮГУ", rating:5.0, tasks:30, reviews:23, pro:true,  photo:"assets/student-photo.png",       city:"Ханты-Мансийск", skills:["Синхронный перевод","Английский C1","Сопровождение делегаций","Координация"] },
+      { id:2, initials:"ЕЛ", name:"Екатерина Л.", role:"Лингвистика · ЮГУ", course:"4 курс · ЮГУ", rating:5.0, tasks:20, reviews:17, pro:true,  photo:"assets/girl.png",                  city:"Ханты-Мансийск", skills:["Перевод","EN B2","Гид-переводчик"] },
+      { id:3, initials:"ИП", name:"Илья П.", role:"Прикладная информатика", course:"3 курс · ЮГУ", rating:4.9, tasks:12, reviews:9,  pro:false, photo:"assets/man.png",                   city:"Сургут", skills:["Python","Tilda","Telegram-боты","QA"] },
+      { id:4, initials:"АС", name:"Анна С.", role:"Журналистика · Медиа", course:"2 курс · ЮГУ", rating:4.8, tasks:7,  reviews:6,  pro:false, photo:"assets/Rectangle 8968.png",        city:"Сургут", skills:["Reels-монтаж","Фотография","SMM"] },
+      { id:5, initials:"ПБ", name:"Полина Б.", role:"Графический дизайн", course:"3 курс · ЮГУ", rating:5.0, tasks:15, reviews:12, pro:true,  photo:"assets/Rectangle 8969.png",        city:"Ханты-Мансийск", skills:["Figma","Брендинг","Иллюстрация"] },
+      { id:6, initials:"ТК", name:"Тимур К.", role:"Менеджмент организации", course:"4 курс · ЮГУ", rating:4.9, tasks:24, reviews:20, pro:true,  photo:"assets/Rectangle 8970.png",        city:"Нижневартовск", skills:["Координация","Event-менеджмент","Ассистент"] },
+      { id:7, initials:"МВ", name:"Мария В.", role:"Лингвистика · Германистика", course:"2 курс · ЮГУ", rating:4.7, tasks:9,  reviews:7,  pro:false, photo:"assets/Rectangle 8971.png",        city:"Сургут", skills:["EN C1","DE B1","Перевод документов"] },
+      { id:8, initials:"АР", name:"Алина Р.", role:"Реклама и PR", course:"3 курс · ЮГУ", rating:4.8, tasks:11, reviews:9,  pro:false, photo:"assets/Rectangle 8972.png",        city:"Нижневартовск", skills:["Копирайтинг","Telegram","VK"] },
+      { id:9, initials:"РХ", name:"Рустам Х.", role:"ИТ-безопасность", course:"4 курс · ЮГУ", rating:5.0, tasks:18, reviews:14, pro:true,  photo:"assets/Rectangle 8973.png",        city:"Ханты-Мансийск", skills:["Тестирование","QA","Техподдержка"] },
+      { id:10,initials:"НС", name:"Никита С.", role:"Программная инженерия", course:"3 курс · ЮГУ", rating:4.6, tasks:8,  reviews:5,  pro:false, photo:"assets/Rectangle 8974.png",        city:"Сургут", skills:["React","HTML/CSS","Tilda"] },
+      { id:11,initials:"ДМ", name:"Дарья М.", role:"Журналистика · ЮГУ", course:"3 курс · ЮГУ", rating:4.9, tasks:14, reviews:11, pro:false, photo:"assets/Rectangle 8975.png",        city:"Ханты-Мансийск", skills:["Фото","Видео","Сторителлинг"] },
+      { id:12,initials:"ОТ", name:"Ольга Т.", role:"Психология · ЮГУ", course:"4 курс · ЮГУ", rating:4.7, tasks:6,  reviews:5,  pro:false, photo:"assets/avatar.jpg",                city:"Нижневартовск", skills:["Коучинг","Фасилитация","HR"] },
+    ];
+
+    const FILTERS = [
+      { id:"all",    label:"Все" },
+      { id:"pro",    label:"PRO" },
+      { id:"top",    label:"Рейтинг 5.0" },
+      { id:"reviews",label:"Есть отзывы" },
+      { id:"event",  label:"Ивент" },
+      { id:"it",     label:"IT" },
+      { id:"media",  label:"Медиа и контент" },
+      { id:"lang",   label:"Лингвистика" },
+    ];
+
+    /* ── Header ─────────────────────────────────── */
+    function Header({ mode, setMode }) {
+      return (
+        <header className="site-header">
+          <div className="site-header__inner">
+            <a className="logo" href="index.html" aria-label="СтудРадар">
+              <span className="logo__mark">
+                <svg viewBox="0 0 63.408 70.213" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M 28.347 26.498 L 34.466 26.498 C 34.846 24.008 35.141 21.602 35.563 19.239 C 36.406 14.061 38.38 9.133 41.345 4.805 C 42.002 3.874 42.751 3.011 43.582 2.231 C 44.304 1.499 45.169 0.924 46.124 0.544 C 47.08 0.163 48.103 -0.015 49.131 0.021 C 50.158 0.057 51.167 0.305 52.093 0.751 C 53.02 1.197 53.844 1.83 54.513 2.611 C 57.413 5.569 59.518 9.213 60.632 13.204 C 63.319 22.042 64.067 31.355 62.827 40.509 C 62.279 44.759 61.26 48.935 59.788 52.959 C 58.695 56.082 56.952 58.937 54.675 61.338 C 52.399 63.738 49.639 65.629 46.578 66.886 C 41.496 69.287 35.907 70.418 30.291 70.183 C 24.674 69.947 19.199 68.353 14.335 65.535 C 11.412 63.898 8.855 61.679 6.823 59.015 C 4.79 56.351 3.325 53.299 2.518 50.047 C 0.331 42.416 -0.441 34.449 0.24 26.54 C 0.519 20.095 2.113 13.776 4.924 7.97 C 5.882 6.077 7.104 4.33 8.554 2.779 C 9.277 1.868 10.206 1.141 11.265 0.659 C 12.324 0.178 13.482 -0.046 14.645 0.008 C 15.807 0.061 16.94 0.39 17.95 0.968 C 18.96 1.545 19.819 2.354 20.455 3.328 C 23.133 6.463 25.015 10.198 25.941 14.216 C 26.827 17.804 27.672 22.868 28.347 26.498 Z M 41.936 51.819 C 41.092 53.001 40.29 54.014 39.615 55.111 C 38.94 56.209 39.615 57.095 40.797 57.01 C 41.997 56.961 43.195 56.848 44.384 56.673 C 46.178 56.439 47.992 56.907 49.448 57.981 C 50.461 58.699 51.474 59.458 52.529 60.091 C 52.75 60.183 52.986 60.23 53.225 60.23 C 53.464 60.23 53.701 60.183 53.922 60.091 C 54.238 59.727 54.417 59.265 54.428 58.783 C 54.491 58.01 54.491 57.234 54.428 56.462 C 54.146 55.187 54.162 53.865 54.477 52.598 C 54.792 51.331 55.396 50.154 56.243 49.161 C 56.845 48.445 57.368 47.667 57.804 46.839 C 57.927 46.677 58.001 46.482 58.015 46.279 C 58.03 46.076 57.986 45.873 57.888 45.694 C 57.789 45.516 57.642 45.37 57.462 45.273 C 57.283 45.177 57.079 45.135 56.876 45.151 C 55.441 45.151 54.006 45.405 52.656 45.531 C 53.249 46.889 53.336 48.414 52.903 49.83 C 52.469 51.247 51.543 52.461 50.292 53.254 C 48.939 54.036 47.35 54.304 45.815 54.01 C 44.281 53.715 42.904 52.878 41.936 51.651 Z M 11.634 45.32 C 10.073 45.32 8.68 45.067 7.414 45.067 C 6.148 45.067 5.979 45.911 6.528 46.797 C 7.076 47.684 8.005 48.907 8.765 49.92 C 9.851 51.276 10.366 53.002 10.199 54.731 C 10.038 55.964 9.94 57.203 9.904 58.445 C 9.885 58.706 9.92 58.969 10.007 59.216 C 10.094 59.463 10.232 59.689 10.41 59.88 C 10.641 59.989 10.894 60.046 11.149 60.046 C 11.404 60.046 11.657 59.989 11.888 59.88 C 12.863 59.268 13.807 58.606 14.715 57.897 C 15.442 57.325 16.275 56.903 17.166 56.657 C 18.058 56.411 18.989 56.344 19.906 56.462 C 21.138 56.623 22.378 56.722 23.62 56.757 C 24.759 56.757 25.308 55.913 24.717 54.942 C 24.126 53.972 23.114 52.748 22.312 51.651 C 18.345 54.309 16.192 54.774 13.871 53.212 C 12.622 52.376 11.711 51.123 11.302 49.677 C 10.892 48.232 11.01 46.687 11.634 45.32 Z M 30.921 60.007 L 31.934 61.779 L 33.2 60.387 L 32.103 58.91 L 30.921 60.007 Z"/>
+                </svg>
+              </span>
+              <span>СтудРадар</span>
+            </a>
+            <div className="audience-toggle" role="tablist">
+              <button role="tab"
+                className={`audience-toggle__option ${mode==="student"?"audience-toggle__option--active":""}`}
+                onClick={() => { setMode("student"); document.documentElement.setAttribute("data-mode","student"); }}>
+                Студенту
+              </button>
+              <button role="tab"
+                className={`audience-toggle__option ${mode==="customer"?"audience-toggle__option--active":""}`}
+                onClick={() => { setMode("customer"); document.documentElement.setAttribute("data-mode","customer"); }}>
+                Заказчику
+              </button>
+              <span className="audience-toggle__indicator" aria-hidden="true"/>
+            </div>
+            <nav className="nav">
+              <a href="index.html">Главная</a>
+              <a href="performers.html" style={{ color: "var(--c-blue-deep)", fontWeight: 700 }}>Исполнители</a>
+              <a href="index.html#how">Как это работает</a>
+              <a href="index.html#faq">FAQ</a>
+            </nav>
+            <div className="header__right">
+              <a className="btn-login" href="#">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+                <span>Войти</span>
+              </a>
+            </div>
+          </div>
+        </header>
+      );
+    }
+
+    /* ── Student Card ────────────────────────────── */
+    function StudentCard({ s }) {
+      return (
+        <a className="sc" href={`profile.html?id=${s.id}`}>
+          <div className="sc__photo">
+            {s.photo
+              ? <img src={s.photo} alt={s.name} />
+              : <div className="sc__photo--placeholder">{s.initials}</div>
+            }
+            <div className="sc__rating">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#DD5444"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              {s.rating.toFixed(1)}
+            </div>
+            {s.pro && <div className="sc__pro-badge">PRO</div>}
+          </div>
+          <div className="sc__body">
+            <h3 className="sc__name">{s.name}</h3>
+            <div className="sc__role">{s.role}<br/><span style={{fontSize:12}}>{s.course} · {s.city}</span></div>
+            <div className="sc__skills">
+              {s.skills.slice(0,3).map(sk => <span key={sk} className="sc__skill">{sk}</span>)}
+            </div>
+            <div className="sc__footer">
+              <div className="sc__tasks">
+                <strong>{s.tasks}</strong> задач · {s.reviews} отз.
+              </div>
+              <div className="sc__arrow">›</div>
+            </div>
+          </div>
+        </a>
+      );
+    }
+
+    /* ── Main App ────────────────────────────────── */
+    function App() {
+      const [mode, setMode] = React.useState("student");
+      const [activeFilter, setActiveFilter] = React.useState("all");
+      const [search, setSearch] = React.useState("");
+
+      const filtered = useMemo(() => {
+        let list = [...STUDENTS];
+        if (activeFilter === "pro")     list = list.filter(s => s.pro);
+        if (activeFilter === "top")     list = list.filter(s => s.rating >= 5.0);
+        if (activeFilter === "reviews") list = list.filter(s => s.reviews > 0);
+        if (activeFilter === "event")   list = list.filter(s => s.skills.some(sk => /ивент|координ|сопровожд/i.test(sk)));
+        if (activeFilter === "it")      list = list.filter(s => s.skills.some(sk => /python|react|tilda|qa|тест|it/i.test(sk)));
+        if (activeFilter === "media")   list = list.filter(s => s.skills.some(sk => /reels|фото|smm|видео|копир|telegram/i.test(sk)));
+        if (activeFilter === "lang")    list = list.filter(s => /лингв|перевод|язык/i.test(s.role));
+        if (search.trim()) {
+          const q = search.toLowerCase();
+          list = list.filter(s =>
+            s.name.toLowerCase().includes(q) ||
+            s.role.toLowerCase().includes(q) ||
+            s.skills.some(sk => sk.toLowerCase().includes(q)) ||
+            s.city.toLowerCase().includes(q)
+          );
+        }
+        return list;
+      }, [activeFilter, search]);
+
+      return (
+        <>
+          <Header mode={mode} setMode={setMode}/>
+          <main>
+            <section className="perf-hero shell section-pad">
+              <div className="perf-hero__top">
+                <h1 className="t-display t-display-lg" style={{margin:0}}>Найти студента</h1>
+                <span className="perf-hero__count">{filtered.length}</span>
+              </div>
+
+              <div className="perf-search">
+                <input
+                  className="perf-search__input"
+                  type="text"
+                  placeholder="Поиск по имени, навыку, городу…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+                {mode === "student" && (
+                  <a className="btn btn-primary" href="index.html#pro" style={{whiteSpace:"nowrap",borderRadius:14,padding:"14px 24px"}}>
+                    Мой профиль
+                  </a>
+                )}
+                {mode === "customer" && (
+                  <button className="btn btn-accent" style={{whiteSpace:"nowrap",borderRadius:14,padding:"14px 24px"}}>
+                    Подбор под ключ
+                  </button>
+                )}
+              </div>
+
+              <div className="perf-filters">
+                {FILTERS.map(f => (
+                  <button key={f.id}
+                    className={`perf-filter${activeFilter===f.id?" active":""}`}
+                    onClick={() => setActiveFilter(f.id)}>
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              {filtered.length === 0 ? (
+                <div style={{textAlign:"center",padding:"80px 0",color:"var(--c-mute)"}}>
+                  <div style={{fontSize:48,marginBottom:16}}>🔍</div>
+                  <div style={{fontFamily:"'Tektur',monospace",fontSize:22,fontWeight:700,textTransform:"uppercase",color:"var(--c-navy)"}}>Никого не нашли</div>
+                  <div style={{marginTop:8}}>Попробуй другой фильтр или измени запрос</div>
+                </div>
+              ) : (
+                <div className="perf-grid">
+                  {filtered.map(s => <StudentCard key={s.id} s={s}/>)}
+                </div>
+              )}
+            </section>
+          </main>
+          <footer style={{borderTop:"1px solid var(--c-border)",padding:"32px var(--pad-x)",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:16,maxWidth:1480,margin:"0 auto"}}>
+            <a href="index.html" className="logo" style={{fontSize:18}}>
+              <span style={{fontFamily:"'Tektur',monospace",fontWeight:700,color:"var(--c-navy)"}}>СтудРадар</span>
+            </a>
+            <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:12,color:"var(--c-mute)"}}>
+              © 2026 СтудРадар · ХМАО-Югра
+            </span>
+          </footer>
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body>
+</html>

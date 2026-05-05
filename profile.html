@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ru" data-mode="student">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мария Иванова — СтудРадар</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    /* ── Profile layout ── */
+    .prof-layout {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 0 var(--pad-x);
+    }
+
+    /* Hero strip — 2 columns: left (photo + contact) | right (main info), the third block goes below right */
+    .prof-hero {
+      position: relative;
+      padding: 48px 0 0;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+
+    /* Left — sidebar */
+    .prof-sidebar {}
+    .prof-photo-wrap {
+      position: relative;
+      margin-bottom: 22px;
+    }
+    .prof-photo {
+      width: 100%;
+      aspect-ratio: 1/1;
+      border-radius: 24px;
+      overflow: hidden;
+      background: linear-gradient(135deg,#0040A0,#2465C5);
+      position: relative;
+    }
+    .prof-photo img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .prof-online {
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(255,255,255,.95);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-family: 'JetBrains Mono',monospace;
+      font-size: 11px;
+      color: var(--c-mute);
+      letter-spacing: 0.03em;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .prof-online::before {
+      content:""; width:7px; height:7px; border-radius:50%;
+      background: var(--c-green-deep);
+    }
+    .prof-pro-badge {
+      position: absolute; top: 16px; left: 16px;
+      background: var(--c-blue-deep);
+      color: #fff;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-family: 'JetBrains Mono',monospace;
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    /* info cells */
+    .prof-info { display: grid; gap: 20px; margin-top: 4px; }
+    .prof-info-item label {
+      font-family: 'Onest','Manrope',sans-serif;
+      font-size: 14px;
+      color: rgba(0,0,0,.42);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .prof-info-item span {
+      font-family: 'Onest','Manrope',sans-serif;
+      font-size: 16px;
+      color: var(--c-ink);
+      line-height: 1.3;
+    }
+    .prof-socials { display: flex; gap: 8px; margin-top: 4px; }
+    .prof-social {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: var(--c-cream);
+      display: grid; place-items: center;
+      color: var(--c-ink);
+      text-decoration: none;
+    }
+    .prof-social:hover { background: var(--c-blue-deep); color: #fff; }
+
+    /* Center — main content */
+    .prof-main {}
+    .prof-name-row {
+      display: flex; align-items: baseline; gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .prof-name {
+      font-family: 'Tektur',monospace;
+      font-weight: 700;
+      font-size: clamp(32px,4vw,60px);
+      text-transform: uppercase;
+      color: var(--c-navy);
+      letter-spacing: -0.01em;
+      line-height: 0.95;
+      margin: 0;
+    }
+    .prof-rating {
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'Tektur',monospace;
+      font-weight: 700;
+      font-size: 22px;
+      color: var(--c-orange-deep);
+    }
+    .prof-stats {
+      display: flex; gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+    .prof-stat {
+      background: var(--c-white);
+      border: 1px solid var(--c-border);
+      border-radius: 18px;
+      padding: 16px 22px;
+      min-width: 130px;
+      text-align: center;
+    }
+    .prof-stat__num {
+      font-family: 'Tektur',monospace;
+      font-weight: 700;
+      font-size: 36px;
+      color: var(--c-blue-deep);
+      display: block;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .prof-stat__label {
+      font-size: 13px;
+      color: var(--c-mute);
+      margin-top: 4px;
+      display: block;
+    }
+
+    .prof-about-title {
+      font-family: 'Tektur',monospace;
+      font-weight: 700;
+      font-size: clamp(24px,2.5vw,40px);
+      text-transform: uppercase;
+      color: var(--c-navy);
+      margin: 0 0 16px;
+    }
+    .prof-about-text {
+      font-family: 'Onest','Manrope',sans-serif;
+      font-size: 17px;
+      line-height: 1.65;
+      color: var(--c-text);
+      margin: 0 0 32px;
+      white-space: pre-line;
+    }
+
+    /* Tags */
+    .prof-tags-section { margin-bottom: 28px; }
+    .prof-tags-label {
+      font-family: 'Onest','Manrope',sans-serif;
+      font-size: 14px;
+      color: rgba(0,0,0,.42);
+      margin-bottom: 10px;
+    }
+    .prof-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .prof-tag {
+      font-size: 14px;
+      background: var(--c-blue-soft);
+      color: var(--c-blue-deep);
+      padding: 7px 16px;
+      border-radius: 999px;
+    }
+    .prof-skill-tag {
+      font-size: 13.5px;
+      background: var(--c-cream);
+      color: var(--c-ink);
+      padding: 7px 14px;
+      border-radius: 999px;
+    }
+    .prof-more-link {
+      font-family: 'Onest','Manrope',sans-serif;
+      font-size: 15px;
+      color: var(--c-blue-deep);
+      text-decoration: none;
+      margin-top: 8px;
+      display: inline-block;
+    }
+
+    /* Right — sidebar */
+    .prof-right { display: flex; flex-direction: column; gap: 28px; }
+    .prof-right-section h3 {
+      font-family: 'Tektur',monospace;
+      font-weight: 700;
+      font-size: clamp(18px,1.8vw,28px);
+      text-transform: uppercase;
+      color: var(--c-navy);
+      margin: 0 0 14px;
+    }
+    .prof-cert-list { display: grid; gap: 8px; }
+    .prof-cert {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 16px;
+      background: var(--c-white);
+      border: 1px solid var(--c-border);
+      border-radius: 14px;
+      font-family: 'Onest','Manrope',sans-serif;
+      font-size: 14px;
+      color: var(--c-ink);
+    }
+    .prof-cert::before {
+      content:"✓";
+      width:22px; height:22px;
+      border-radius:50%;
+      background: var(--c-blue-soft);
+      color: var(--c-blue-deep);
+      display:grid; place-items:center;
+      font-size:12px; font-weight:700;
+      flex-shrink:0;
+    }
+
+    /* Video card */
+    .prof-video {
+      position: relative;
+      aspect-ratio: 16/10;
+      border-radius: 20px;
+      background: linear-gradient(rgba(0,64,157,.5),rgba(0,64,157,.5)),
+                  url('assets/student-photo.png') center/cover no-repeat;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .prof-video__play {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.9);
+      display: grid; place-items: center;
+      color: var(--c-blue-deep);
+    }
+    .prof-video__play svg { margin-left: 3px; }
+
+    /* CTA buttons */
+    .prof-cta {
+      display: flex; gap: 12px;
+      flex-wrap: wrap;
+      margin: 32px 0;
+    }
+
+    /* Divider */
+    .prof-divider {
+      border: none;
+      border-top: 1px solid var(--c-border);
+      margin: 48px 0;
+    }
+
+    /* Portfolio */
+    .prof-portfolio { }
+    .prof-portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 14px;
+      margin-top: 24px;
+    }
+    .prof-portfolio-card {
+      background: var(--c-white);
+      border: 1px solid var(--c-border);
+      border-radius: 22px;
+      overflow: hidden;
+    }
+    .prof-portfolio-img {
+      aspect-ratio: 16/9;
+      background: repeating-linear-gradient(135deg,#DCDCDE 0 10px,#C8C8CA 10px 20px);
+      position: relative;
+    }
+    .prof-portfolio-img::after {
+      content: attr(data-label);
+      position: absolute; left:12px; bottom:10px;
+      font-family:'JetBrains Mono',monospace;
+      font-size:11px; letter-spacing:.04em; text-transform:uppercase;
+      background:rgba(255,255,255,.9);
+      color: var(--c-navy);
+      padding: 3px 10px; border-radius:999px;
+    }
+    .prof-portfolio-body { padding: 16px 18px; }
+    .prof-portfolio-title {
+      font-family: 'Onest','Manrope',sans-serif;
+      font-weight: 600; font-size: 15px;
+      color: var(--c-ink); margin:0 0 6px;
+    }
+    .prof-portfolio-meta {
+      font-family: 'JetBrains Mono',monospace;
+      font-size: 12px; color: var(--c-mute);
+    }
+
+    /* Reviews */
+    .prof-reviews-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .prof-review {
+      background: var(--c-white);
+      border: 1px solid var(--c-border);
+      border-radius: 22px;
+      padding: 24px;
+      display: flex; flex-direction:column; gap:14px;
+    }
+    .prof-review__company {
+      font-family: 'Tektur',monospace;
+      font-weight: 700; font-size: 16px;
+      text-transform: uppercase;
+      color: var(--c-navy); margin:0;
+    }
+    .prof-review__stars { display:flex; gap:3px; color: var(--c-orange); }
+    .prof-review__text {
+      font-family: 'Onest','Manrope',sans-serif;
+      font-size: 14.5px; line-height:1.55;
+      color: var(--c-text);
+      margin:0;
+      flex: 1;
+    }
+    .prof-review__footer {
+      font-family:'JetBrains Mono',monospace;
+      font-size:11.5px; color:var(--c-mute);
+      border-top:1px solid var(--c-border);
+      padding-top:12px;
+      display:flex; gap:8px; align-items:center;
+    }
+
+    /* Tasks list */
+    .prof-tasks-list { display:grid; gap:10px; margin-top:20px; }
+    .prof-task-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 16px 20px;
+      background: var(--c-white);
+      border: 1px solid var(--c-border);
+      border-radius: 16px;
+      text-decoration:none; color:inherit;
+      transition: border-color .15s, transform .15s;
+    }
+    .prof-task-row:hover { border-color: var(--c-blue); transform:translateX(4px); }
+    .prof-task-row__title {
+      font-family:'Onest','Manrope',sans-serif;
+      font-weight:600; font-size:15.5px;
+      color:var(--c-ink);
+    }
+    .prof-task-row__meta {
+      font-family:'JetBrains Mono',monospace;
+      font-size:11.5px; color:var(--c-mute);
+      margin-top:3px;
+    }
+    .prof-task-row__check {
+      width:28px; height:28px; border-radius:50%;
+      background:var(--c-blue-soft);
+      display:grid; place-items:center;
+      color:var(--c-blue-deep); flex-shrink:0;
+    }
+
+    /* PDF download button */
+    .btn-pdf {
+      background: var(--c-orange);
+      color: #fff;
+      border-radius: 13px;
+      padding: 18px 32px;
+      font-family: 'Tektur',monospace;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 0.02em;
+      display:inline-flex; align-items:center; gap:12px;
+      cursor:pointer; border:none;
+      transition: background .15s, transform .15s;
+    }
+    .btn-pdf:hover { background: var(--c-orange-deep); transform:translateY(-1px); }
+
+    /* Breadcrumb */
+    .prof-breadcrumb {
+      display:flex; align-items:center; gap:10px;
+      padding: 20px 0 0;
+      font-family:'JetBrains Mono',monospace;
+      font-size:12px; color:var(--c-mute);
+      letter-spacing:.03em;
+    }
+    .prof-breadcrumb a { color:var(--c-mute); text-decoration:none; }
+    .prof-breadcrumb a:hover { color:var(--c-blue); }
+    .prof-breadcrumb span { color:var(--c-ink); }
+
+    /* Propose task modal */
+    .propose-modal { max-width:480px; }
+
+    /* Right column main wrapper (now contains main + below-grid) */
+    .prof-right-col { display: flex; flex-direction: column; gap: 28px; }
+
+    /* "Third" block under right column — laid out as horizontal grid */
+    .prof-below {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+      margin-top: 12px;
+    }
+    .prof-below .prof-right-section h3 { font-size: clamp(18px,1.6vw,22px); }
+    .prof-below .prof-video { aspect-ratio: 4/3; }
+
+    /* responsive */
+    @media(max-width:1200px){
+      .prof-hero { grid-template-columns:300px 1fr; }
+      .prof-portfolio-grid, .prof-reviews-grid { grid-template-columns: repeat(2,1fr); }
+      .prof-below { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media(max-width:800px){
+      .prof-hero { grid-template-columns:1fr; }
+      .prof-stats { gap:8px; }
+      .prof-portfolio-grid, .prof-reviews-grid { grid-template-columns:1fr; }
+      .prof-below { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+/* ── Star component ─────────────────── */
+function Stars({ n = 5 }) {
+  return (
+    <div style={{display:"flex",gap:3}}>
+      {Array.from({length:5}).map((_,i) => (
+        <svg key={i} width="14" height="14" viewBox="0 0 24 24"
+          fill={i < n ? "#DD5444" : "#E5E7EC"}>
+          <path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+/* ── Modal ──────────────────────────── */
+function ProposeModal({ onClose }) {
+  const [sent, setSent] = useState(false);
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal propose-modal" onClick={e => e.stopPropagation()}>
+        <button className="modal__close" onClick={onClose}>×</button>
+        {sent ? (
+          <div style={{textAlign:"center",padding:"20px 0"}}>
+            <div style={{fontSize:48,marginBottom:16}}>✓</div>
+            <h3 style={{fontFamily:"'Tektur',monospace",textTransform:"uppercase",fontSize:26}}>Предложение отправлено</h3>
+            <p style={{color:"var(--c-mute)",fontSize:15}}>Мария получит уведомление и ответит вам в течение суток.</p>
+            <button className="btn btn-primary" style={{marginTop:16,justifyContent:"center",width:"100%"}} onClick={onClose}>Закрыть</button>
+          </div>
+        ) : (
+          <>
+            <h3 style={{fontFamily:"'Tektur',monospace",textTransform:"uppercase",fontSize:26,margin:"0 0 8px",color:"var(--c-navy)"}}>Предложить задачу</h3>
+            <p style={{color:"var(--c-mute)",fontSize:14,margin:"0 0 20px"}}>Опишите задачу — Мария получит уведомление и сможет принять или отклонить предложение.</p>
+            <form onSubmit={e=>{e.preventDefault();setSent(true);}} style={{display:"grid",gap:14}}>
+              <label className="field">
+                <span>Название задачи</span>
+                <input placeholder="Переводчик на конференцию, 2 дня" required/>
+              </label>
+              <label className="field">
+                <span>Дата и место</span>
+                <input placeholder="14–15 июня, Ханты-Мансийск" required/>
+              </label>
+              <label className="field">
+                <span>Оплата (₽)</span>
+                <input type="number" placeholder="12 000" required/>
+              </label>
+              <label className="field">
+                <span>Описание</span>
+                <textarea placeholder="Подробности задачи, требования, ожидания…" style={{minHeight:80}}/>
+              </label>
+              <label className="field">
+                <span>Ваш e-mail для ответа</span>
+                <input type="email" placeholder="hr@company.ru" required/>
+              </label>
+              <button type="submit" className="btn btn-accent" style={{justifyContent:"center",marginTop:4}}>
+                Отправить предложение ▸▸▸
+              </button>
+              <p style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"var(--c-mute)",margin:0}}>
+                Платформа выступает гарантом: оплата резервируется через эскроу до приёмки.
+              </p>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Profile App ────────────────────── */
+function App() {
+  const [modal, setModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("about");
+
+  const tabs = [
+    {id:"about",  label:"О себе"},
+    {id:"portfolio", label:"Портфолио"},
+    {id:"reviews", label:"Отзывы · 23"},
+  ];
+
+  const reviews = [
+    { company:"КВЦ Югра-Экспо", stars:5, text:"Перед Марией стояла сложная задача — за один день познакомить международную пресс-группу с экспозицией музея, ответить на каверзные вопросы и показать город. Справилась на «отлично»! Её глубокие знания истории края и уверенный английский произвели на гостей великолепное впечатление.", date:"Март 2025", task:"Гид-переводчик для пресс-тура" },
+    { company:"Технопарк Югры", stars:5, text:"Хотим выразить благодарность Марии за профессиональную работу по сопровождению наших иностранных партнёров. Мария не только безупречно справилась с синхронным переводом на технических секциях, но и проявила себя как ответственный координатор.", date:"Февраль 2025", task:"Синхронный перевод на конференции" },
+    { company:"IT-Forum Югра", stars:5, text:"Работали с Марией на крупном форуме — организация, пунктуальность и языковая точность на высшем уровне. Гости из Азии остались в восторге. Обязательно приглашу снова.", date:"Ноябрь 2024", task:"Синхронный перевод + координация делегации" },
+  ];
+
+  const portfolio = [
+    { title:"Гид-переводчик, Музей природы и человека", meta:"Март 2025 · Ханты-Мансийск", label:"Экскурсия EN" },
+    { title:"Синхронный перевод, IT-Forum Югра 2024", meta:"Ноябрь 2024 · Ханты-Мансийск", label:"IT-Forum 2024" },
+    { title:"Координация делегации, Чемпионат азиатских городов", meta:"Май 2025 · Ханты-Мансийск", label:"Чемпионат 2025" },
+    { title:"Переводчик, Дух огня — Международный фестиваль", meta:"Апрель 2025 · Ханты-Мансийск", label:"Дух огня 2025" },
+    { title:"Создание системы навигации для общежитий", meta:"Февраль 2025 · Удалённо", label:"UX-проект" },
+    { title:"Волонтёр международного мероприятия — Экспо ХМАО", meta:"Декабрь 2024 · Ханты-Мансийск", label:"Экспо ХМАО" },
+  ];
+
+  const tasks = [
+    { title:"Создание системы навигации для общежитий", meta:"Февраль 2025 · Удалённо" },
+    { title:"Волонтёр международного мероприятия", meta:"Декабрь 2024 · Ханты-Мансийск" },
+    { title:"Синхронный перевод на IT-Forum", meta:"Ноябрь 2024 · Ханты-Мансийск" },
+  ];
+
+  return (
+    <>
+      {/* Header */}
+      <header className="site-header">
+        <div className="site-header__inner">
+          <a className="logo" href="index.html">
+            <span className="logo__mark" style={{color:"var(--c-blue)"}}>
+              <svg viewBox="0 0 63.408 70.213" fill="currentColor" width="28" height="32">
+                <path d="M 28.347 26.498 L 34.466 26.498 C 34.846 24.008 35.141 21.602 35.563 19.239 C 36.406 14.061 38.38 9.133 41.345 4.805 C 42.002 3.874 42.751 3.011 43.582 2.231 C 44.304 1.499 45.169 0.924 46.124 0.544 C 47.08 0.163 48.103 -0.015 49.131 0.021 C 50.158 0.057 51.167 0.305 52.093 0.751 C 53.02 1.197 53.844 1.83 54.513 2.611 C 57.413 5.569 59.518 9.213 60.632 13.204 C 63.319 22.042 64.067 31.355 62.827 40.509 C 62.279 44.759 61.26 48.935 59.788 52.959 C 58.695 56.082 56.952 58.937 54.675 61.338 C 52.399 63.738 49.639 65.629 46.578 66.886 C 41.496 69.287 35.907 70.418 30.291 70.183 C 24.674 69.947 19.199 68.353 14.335 65.535 C 11.412 63.898 8.855 61.679 6.823 59.015 C 4.79 56.351 3.325 53.299 2.518 50.047 C 0.331 42.416 -0.441 34.449 0.24 26.54 C 0.519 20.095 2.113 13.776 4.924 7.97 C 5.882 6.077 7.104 4.33 8.554 2.779 C 9.277 1.868 10.206 1.141 11.265 0.659 C 12.324 0.178 13.482 -0.046 14.645 0.008 C 15.807 0.061 16.94 0.39 17.95 0.968 C 18.96 1.545 19.819 2.354 20.455 3.328 C 23.133 6.463 25.015 10.198 25.941 14.216 C 26.827 17.804 27.672 22.868 28.347 26.498 Z M 41.936 51.819 C 41.092 53.001 40.29 54.014 39.615 55.111 C 38.94 56.209 39.615 57.095 40.797 57.01 C 41.997 56.961 43.195 56.848 44.384 56.673 C 46.178 56.439 47.992 56.907 49.448 57.981 C 50.461 58.699 51.474 59.458 52.529 60.091 C 52.75 60.183 52.986 60.23 53.225 60.23 C 53.464 60.23 53.701 60.183 53.922 60.091 C 54.238 59.727 54.417 59.265 54.428 58.783 C 54.491 58.01 54.491 57.234 54.428 56.462 C 54.146 55.187 54.162 53.865 54.477 52.598 C 54.792 51.331 55.396 50.154 56.243 49.161 C 56.845 48.445 57.368 47.667 57.804 46.839 C 57.927 46.677 58.001 46.482 58.015 46.279 C 58.03 46.076 57.986 45.873 57.888 45.694 C 57.789 45.516 57.642 45.37 57.462 45.273 C 57.283 45.177 57.079 45.135 56.876 45.151 C 55.441 45.151 54.006 45.405 52.656 45.531 C 53.249 46.889 53.336 48.414 52.903 49.83 C 52.469 51.247 51.543 52.461 50.292 53.254 C 48.939 54.036 47.35 54.304 45.815 54.01 C 44.281 53.715 42.904 52.878 41.936 51.651 Z M 11.634 45.32 C 10.073 45.32 8.68 45.067 7.414 45.067 C 6.148 45.067 5.979 45.911 6.528 46.797 C 7.076 47.684 8.005 48.907 8.765 49.92 C 9.851 51.276 10.366 53.002 10.199 54.731 C 10.038 55.964 9.94 57.203 9.904 58.445 C 9.885 58.706 9.92 58.969 10.007 59.216 C 10.094 59.463 10.232 59.689 10.41 59.88 C 10.641 59.989 10.894 60.046 11.149 60.046 C 11.404 60.046 11.657 59.989 11.888 59.88 C 12.863 59.268 13.807 58.606 14.715 57.897 C 15.442 57.325 16.275 56.903 17.166 56.657 C 18.058 56.411 18.989 56.344 19.906 56.462 C 21.138 56.623 22.378 56.722 23.62 56.757 C 24.759 56.757 25.308 55.913 24.717 54.942 C 24.126 53.972 23.114 52.748 22.312 51.651 C 18.345 54.309 16.192 54.774 13.871 53.212 C 12.622 52.376 11.711 51.123 11.302 49.677 C 10.892 48.232 11.01 46.687 11.634 45.32 Z M 30.921 60.007 L 31.934 61.779 L 33.2 60.387 L 32.103 58.91 L 30.921 60.007 Z"/>
+              </svg>
+            </span>
+            <span>СтудРадар</span>
+          </a>
+          <nav className="nav">
+            <a href="index.html">Главная</a>
+            <a href="performers.html">Исполнители</a>
+            <a href="index.html#how">Как это работает</a>
+          </nav>
+          <div className="header__right">
+            <button className="btn btn-accent" style={{padding:"10px 20px",fontSize:14,borderRadius:12}} onClick={()=>setModal(true)}>
+              Предложить задачу ▸
+            </button>
+            <a className="btn-login" href="#">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+              <span>Войти</span>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <div className="prof-layout">
+        {/* Breadcrumb */}
+        <nav className="prof-breadcrumb">
+          <a href="index.html">Главная</a>
+          <span>›</span>
+          <a href="performers.html">Исполнители</a>
+          <span>›</span>
+          <span>Мария Иванова</span>
+        </nav>
+
+        {/* Hero */}
+        <section className="prof-hero">
+          {/* Left — photo + info */}
+          <aside className="prof-sidebar">
+            <div className="prof-photo-wrap">
+              <div className="prof-photo">
+                <img src="assets/student-photo.png" alt="Мария Иванова"/>
+                <div className="prof-online">Была вчера в 17:46</div>
+                <div className="prof-pro-badge">PRO</div>
+              </div>
+            </div>
+            <div className="prof-info">
+              <div className="prof-info-item">
+                <label>Город</label>
+                <span>Ханты-Мансийск</span>
+              </div>
+              <div className="prof-info-item">
+                <label>Университет</label>
+                <span>Югорский государственный университет<br/>
+                  <span style={{color:"var(--c-mute)",fontSize:14}}>2 курс</span>
+                </span>
+              </div>
+              <div className="prof-info-item">
+                <label>Факультет</label>
+                <span>Лингвистика. Перевод и переводоведение</span>
+              </div>
+              <div className="prof-info-item">
+                <label>Соцсети</label>
+                <div className="prof-socials">
+                  <a className="prof-social" href="#" title="Telegram">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 2.5 1.7 10.3c-.9.4-.9 1.6 0 2l4.6 1.6 1.8 5.6c.2.7 1 .9 1.6.4l2.7-2.2 4.7 3.5c.7.5 1.7.1 1.9-.7l3.6-16.5c.2-.9-.7-1.7-1.6-1.5zM9 14.4l9.8-7.4-7.6 8L11 18l-2-3.6z"/></svg>
+                  </a>
+                  <a className="prof-social" href="#" title="ВКонтакте">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13.2 17.5c-5.3 0-8.7-3.6-8.8-9.7H7.4c.1 4.5 2.1 6.4 3.7 6.8V7.8h2.5v3.7c1.6-.2 3.2-1.9 3.8-3.7H20c-.5 2.3-2.2 4.4-4.3 5.2 2.1.7 4 2.7 4.8 5.5h-2.7c-.6-2-2.1-3.6-3.9-3.8v3.8h-.7z"/></svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* Right column — main + below blocks */}
+          <div className="prof-right-col">
+          <main className="prof-main">
+            <div className="prof-name-row">
+              <h1 className="prof-name">Мария Иванова</h1>
+              <div className="prof-rating">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#DD5444"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                5.0
+              </div>
+            </div>
+
+            <div className="prof-stats">
+              <div className="prof-stat">
+                <span className="prof-stat__num">30</span>
+                <span className="prof-stat__label">Выполнила заданий</span>
+              </div>
+              <div className="prof-stat">
+                <span className="prof-stat__num">12</span>
+                <span className="prof-stat__label">Кейсов в портфолио</span>
+              </div>
+              <div className="prof-stat">
+                <span className="prof-stat__num">23</span>
+                <span className="prof-stat__label">Всего отзывов</span>
+              </div>
+              <div className="prof-stat">
+                <span className="prof-stat__num">2+</span>
+                <span className="prof-stat__label">Года опыта</span>
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div style={{display:"flex",gap:4,marginBottom:28,borderBottom:"1px solid var(--c-border)",paddingBottom:0}}>
+              {tabs.map(t => (
+                <button key={t.id} onClick={()=>setActiveTab(t.id)}
+                  style={{
+                    fontFamily:"'Onest','Manrope',sans-serif",
+                    fontWeight:600, fontSize:16,
+                    padding:"12px 20px",
+                    background:"none", border:"none", cursor:"pointer",
+                    color: activeTab===t.id ? "var(--c-blue-deep)" : "var(--c-mute)",
+                    borderBottom: activeTab===t.id ? "2px solid var(--c-blue-deep)" : "2px solid transparent",
+                    marginBottom: -1,
+                    transition:"color .15s",
+                  }}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab: About */}
+            {activeTab === "about" && (
+              <div>
+                <h2 className="prof-about-title">Обо мне</h2>
+                <p className="prof-about-text">
+                  {`Учусь на 2 курсе Югорского государственного университета и уже более 2 лет помогаю иностранным гостям чувствовать себя как дома на международных мероприятиях в нашем городе.
+
+Переводы, организация сопровождения, решение нестандартных ситуаций — я ваш надёжный помощник для комфортного пребывания делегаций.
+
+Если вам нужен не просто переводчик, а ответственный координатор — я готова помочь! Готова рассказать о конкретных кейсах участия в мероприятиях.
+
+🔧 Как я строю работу:
+• Бесплатная консультация и обсуждение задач
+• Изучение тематики вашего мероприятия
+• Непосредственная работа с делегацией: перевод, сопровождение
+• Обратная связь и отчёт о проделанной работе`}
+                </p>
+
+                <div className="prof-tags-section">
+                  <div className="prof-tags-label">Специализация</div>
+                  <div className="prof-tags">
+                    {["Синхронный перевод","Сопровождение делегаций","Перевод экскурсий","Гид-переводчик"].map(t=>(
+                      <span key={t} className="prof-tag">{t}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="prof-tags-section">
+                  <div className="prof-tags-label">Навыки</div>
+                  <div className="prof-tags">
+                    {["Английский C1","Немецкий B1","Ораторское мастерство","Тайм-менеджмент","Координация","Протокол"].map(t=>(
+                      <span key={t} className="prof-skill-tag">{t}</span>
+                    ))}
+                  </div>
+                  <a className="prof-more-link" href="#">Ещё 4 навыка →</a>
+                </div>
+
+                {/* Recent tasks */}
+                <h2 className="prof-about-title" style={{marginTop:32}}>Последние задачи</h2>
+                <div className="prof-tasks-list">
+                  {tasks.map((t,i) => (
+                    <div key={i} className="prof-task-row">
+                      <div>
+                        <div className="prof-task-row__title">{t.title}</div>
+                        <div className="prof-task-row__meta">{t.meta}</div>
+                      </div>
+                      <div className="prof-task-row__check">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tab: Portfolio */}
+            {activeTab === "portfolio" && (
+              <div>
+                <div className="prof-portfolio-grid">
+                  {portfolio.map((p,i) => (
+                    <div key={i} className="prof-portfolio-card">
+                      <div className="prof-portfolio-img" data-label={p.label}/>
+                      <div className="prof-portfolio-body">
+                        <div className="prof-portfolio-title">{p.title}</div>
+                        <div className="prof-portfolio-meta">{p.meta}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tab: Reviews */}
+            {activeTab === "reviews" && (
+              <div>
+                <div className="prof-reviews-grid">
+                  {reviews.map((r,i) => (
+                    <div key={i} className="prof-review">
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                        <h3 className="prof-review__company">{r.company}</h3>
+                        <Stars n={r.stars}/>
+                      </div>
+                      <p className="prof-review__text">«{r.text}»</p>
+                      <div className="prof-review__footer">
+                        <span>{r.date}</span>
+                        <span>·</span>
+                        <span>{r.task}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* CTA */}
+            <div className="prof-cta">
+              <button className="btn btn-primary" onClick={()=>setModal(true)}
+                style={{borderRadius:14,padding:"18px 32px",fontSize:16}}>
+                Предложить задачу ▸▸▸
+              </button>
+              <button className="btn-pdf" onClick={()=>alert("PDF скачивается…")}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                Скачать PDF
+              </button>
+            </div>
+          </main>
+
+          {/* "Third" block — under right column, laid out as horizontal grid */}
+          <section className="prof-below" aria-label="Дополнительная информация">
+            <div className="prof-right-section">
+              <h3>Сертификаты</h3>
+              <div className="prof-cert-list">
+                {["Перевод экскурсий","Сопровождение иностранных делегаций","Английский язык — B2","IELTS 7.0"].map(c=>(
+                  <div key={c} className="prof-cert">{c}</div>
+                ))}
+              </div>
+              <h3 style={{marginTop:24}}>Доп. образование</h3>
+              <div className="prof-cert-list">
+                {["Переводчик-экскурсовод · ЮГУ","Сопровождение делегаций · Минкульт","Английский C1 · British Council"].map(c=>(
+                  <div key={c} className="prof-cert" style={{background:"var(--c-cream)"}}>{c}</div>
+                ))}
+              </div>
+            </div>
+
+            <div className="prof-right-section">
+              <h3>Видеовизитка</h3>
+              <div className="prof-video">
+                <div className="prof-video__play">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--c-blue-deep)"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </div>
+              </div>
+              <p style={{fontFamily:"'Onest','Manrope',sans-serif",fontSize:13.5,color:"var(--c-mute)",margin:"12px 0 0",lineHeight:1.5}}>
+                30-секундное видео — Мария рассказывает, как ведёт сопровождение делегаций.
+              </p>
+            </div>
+
+            <div className="prof-right-section">
+              <h3>Проверки</h3>
+              <div style={{display:"grid",gap:8}}>
+                {[
+                  {label:"Студенческий билет",ok:true},
+                  {label:"Телефон",ok:true},
+                  {label:"E-mail",ok:true},
+                  {label:"Самозанятость",ok:true},
+                ].map(c=>(
+                  <div key={c.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",background:"var(--c-cream)",borderRadius:12}}>
+                    <span style={{fontSize:14,color:"var(--c-text)"}}>{c.label}</span>
+                    <span style={{fontSize:12,color:c.ok?"var(--c-green-deep)":"var(--c-mute)",fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>
+                      {c.ok ? "✓" : "—"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+          </div>
+        </section>
+
+        <hr className="prof-divider"/>
+
+        {/* Other students */}
+        <section style={{paddingBottom:80}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:24}}>
+            <h2 className="t-display t-display-md" style={{margin:0}}>Похожие исполнители</h2>
+            <a href="performers.html" className="section-link">Все исполнители ▸</a>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16}}>
+            {[
+              {id:2, initials:"ЕЛ", name:"Екатерина Л.", role:"Лингвистика · ЮГУ", rating:5.0, tasks:20, skills:["Перевод","EN B2"]},
+              {id:7, initials:"МВ", name:"Мария В.", role:"Германистика · ЮГУ", rating:4.7, tasks:9,  skills:["EN C1","DE B1"]},
+              {id:6, initials:"ТК", name:"Тимур К.", role:"Менеджмент · ЮГУ", rating:4.9, tasks:24, skills:["Координация","Event"]},
+              {id:11,initials:"ДМ", name:"Дарья М.", role:"Журналистика · ЮГУ", rating:4.9, tasks:14, skills:["Фото","Видео"]},
+            ].map(s => (
+              <a key={s.id} href={`profile.html?id=${s.id}`}
+                style={{
+                  background:"var(--c-white)",border:"1px solid var(--c-border)",
+                  borderRadius:22,padding:20,display:"flex",flexDirection:"column",gap:10,
+                  textDecoration:"none",color:"inherit",
+                  transition:"transform .2s,border-color .2s"
+                }}
+                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.borderColor="var(--c-blue)";}}
+                onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.borderColor="var(--c-border)";}}>
+                <div style={{
+                  width:"100%",aspectRatio:"1/1",borderRadius:16,
+                  background:"linear-gradient(135deg,#E0ECFF,#C0D4F5)",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  fontFamily:"'Tektur',monospace",fontWeight:700,fontSize:32,
+                  color:"var(--c-blue-deep)",textTransform:"uppercase"
+                }}>{s.initials}</div>
+                <div style={{fontFamily:"'Tektur',monospace",fontWeight:700,fontSize:16,textTransform:"uppercase",color:"var(--c-navy)"}}>{s.name}</div>
+                <div style={{fontSize:13,color:"var(--c-mute)"}}>{s.role}</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {s.skills.map(sk=><span key={sk} style={{fontSize:11,background:"var(--c-cream)",padding:"3px 8px",borderRadius:999}}>{sk}</span>)}
+                </div>
+                <div style={{display:"flex",justifyContent:"space-between",marginTop:"auto",paddingTop:10,borderTop:"1px solid var(--c-border)"}}>
+                  <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:12,color:"var(--c-mute)"}}>{s.tasks} задач</span>
+                  <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,fontWeight:700,color:"var(--c-orange-deep)"}}>★ {s.rating}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {modal && <ProposeModal onClose={()=>setModal(false)}/>}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

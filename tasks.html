@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ru" data-mode="student">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Задачи — СтудРадар</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+  <style>
+    /* ─── Shared layout ─── */
+    .tasks-shell { max-width: 1480px; margin: 0 auto; padding: 0 var(--pad-x); }
+    .tasks-hero { padding: clamp(40px,5vw,72px) 0 0; }
+    .tasks-hero__top {
+      display: flex; align-items: baseline; gap: 18px;
+      margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .tasks-hero__count {
+      font-family: 'Onest','Manrope',sans-serif;
+      font-size: 28px;
+      color: var(--c-orange);
+      letter-spacing: 0.02em;
+    }
+
+    /* ─── Search + filters ─── */
+    .tasks-search {
+      display: flex; gap: 12px; align-items: center;
+      margin-bottom: 22px; flex-wrap: wrap;
+    }
+    .tasks-search__input {
+      flex: 1; min-width: 280px;
+      font-family: 'Manrope',sans-serif;
+      font-size: 16px;
+      border: 1.5px solid var(--c-border);
+      background: var(--c-white);
+      padding: 14px 20px;
+      border-radius: 14px;
+      color: var(--c-ink);
+    }
+    .tasks-search__input:focus { outline:none; border-color: var(--c-blue); }
+
+    .tasks-filters {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-bottom: 32px;
+    }
+    .tasks-filter {
+      font-family: 'Manrope',sans-serif;
+      font-weight: 500; font-size: 14.5px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      background: var(--c-white);
+      border: 1.5px solid var(--c-border);
+      color: var(--c-ink);
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .tasks-filter:hover { border-color: var(--c-blue); color: var(--c-blue); }
+    .tasks-filter.active {
+      background: var(--c-blue-deep); color:#fff; border-color: var(--c-blue-deep);
+    }
+    .tasks-sort {
+      margin-left: auto;
+      font-family:'Onest','Manrope',sans-serif;
+      font-size: 14px;
+      color: var(--c-mute);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .tasks-sort select {
+      font-family: inherit; font-size:14px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1.5px solid var(--c-border);
+      background:#fff; color: var(--c-ink); cursor:pointer;
+    }
+
+    /* ─── Two-column layout: list + detail ─── */
+    .tasks-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 460px;
+      gap: 22px;
+      padding-bottom: 80px;
+      align-items: start;
+    }
+    @media (max-width: 1100px) { .tasks-grid { grid-template-columns: 1fr; } }
+
+    .tasks-list { display: grid; gap: 14px; }
+
+    /* ─── Task card ─── */
+    .task-card {
+      background: var(--c-white);
+      border: 1.5px solid var(--c-border);
+      border-radius: 20px;
+      padding: 20px 22px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      cursor: pointer;
+      transition: border-color .15s, transform .15s, box-shadow .15s;
+    }
+    .task-card:hover { border-color: var(--c-blue); transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0,0,0,.06); }
+    .task-card.is-active {
+      border-color: var(--c-blue-deep);
+      box-shadow: 0 8px 22px rgba(0,64,160,.12);
+    }
+    .task-card__head {
+      display: flex; gap: 10px; align-items: center; margin-bottom: 10px;
+    }
+    .task-card__cat {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: var(--c-blue-soft);
+      color: var(--c-blue-deep);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    .task-card__urgent {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: #FFE4DE;
+      color: #C04331;
+      padding: 4px 10px; border-radius: 999px;
+      font-weight: 700;
+    }
+    .task-card__title {
+      font-family: 'Tektur', monospace;
+      font-weight: 700;
+      font-size: 19px;
+      line-height: 1.15;
+      text-transform: uppercase;
+      color: var(--c-navy);
+      letter-spacing: -0.005em;
+      margin: 0 0 8px;
+    }
+    .task-card__meta {
+      display: flex; flex-wrap: wrap; gap: 8px 16px;
+      font-family: 'Onest','Manrope', sans-serif;
+      font-size: 13px;
+      color: var(--c-mute);
+    }
+    .task-card__meta span { display: inline-flex; align-items: center; gap: 5px; }
+    .task-card__pay {
+      text-align: right;
+      font-family: 'Tektur', monospace;
+      font-weight: 700;
+      font-size: 24px;
+      color: var(--c-blue-deep);
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .task-card__pay sub {
+      display: block;
+      font-family: 'Onest', 'Manrope', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--c-mute);
+      margin-top: 6px;
+    }
+    .task-card__skills {
+      grid-column: 1 / -1;
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-top: 4px;
+    }
+    .task-card__skill {
+      font-size: 12px;
+      background: var(--c-cream);
+      color: var(--c-ink);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    .task-card__bottom {
+      grid-column: 1 / -1;
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid var(--c-border);
+    }
+    .task-card__customer {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: var(--c-text);
+    }
+    .task-card__customer-avatar {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg,#0040A0,#2465C5);
+      color: #fff;
+      display: grid; place-items: center;
+      font-family: 'Tektur', monospace;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .task-card__resp {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--c-mute);
+    }
+    .task-card__resp strong { color: var(--c-orange-deep); }
+
+    /* ─── Detail panel (right column on desktop, drawer on mobile) ─── */
+    .task-detail {
+      position: sticky; top: 24px;
+      background: var(--c-white);
+      border: 1.5px solid var(--c-border);
+      border-radius: 24px;
+      padding: 28px;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+    }
+    .task-detail__head { margin-bottom: 18px; }
+    .task-detail__cat {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: var(--c-blue-soft);
+      color: var(--c-blue-deep);
+      padding: 4px 12px; border-radius: 999px;
+      display: inline-block; margin-bottom: 14px;
+    }
+    .task-detail__title {
+      font-family: 'Tektur', monospace;
+      font-weight: 700;
+      font-size: 26px;
+      line-height: 1.05;
+      text-transform: uppercase;
+      color: var(--c-navy);
+      margin: 0 0 14px;
+    }
+    .task-detail__pay {
+      font-family: 'Tektur', monospace;
+      font-weight: 700;
+      font-size: 38px;
+      color: var(--c-blue-deep);
+      line-height: 1;
+    }
+    .task-detail__pay sub {
+      font-family: 'Onest','Manrope',sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--c-mute);
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .task-detail__quick {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 18px 0 22px;
+    }
+    .task-detail__quick-item {
+      background: var(--c-cream);
+      padding: 12px 14px;
+      border-radius: 12px;
+    }
+    .task-detail__quick-label {
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--c-mute);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 4px;
+    }
+    .task-detail__quick-val {
+      font-family: 'Onest','Manrope',sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--c-ink);
+    }
+
+    .task-detail__section { margin-bottom: 22px; }
+    .task-detail__section h4 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--c-mute);
+      margin: 0 0 8px;
+      font-weight: 700;
+    }
+    .task-detail__section p {
+      font-family: 'Onest', 'Manrope', sans-serif;
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: var(--c-text);
+      margin: 0;
+      white-space: pre-line;
+    }
+    .task-detail__skills {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .task-detail__skills span {
+      font-size: 13px;
+      background: var(--c-blue-soft);
+      color: var(--c-blue-deep);
+      padding: 5px 12px;
+      border-radius: 999px;
+    }
+
+    .task-detail__customer {
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      background: var(--c-cream);
+      border-radius: 14px;
+    }
+    .task-detail__customer-avatar {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg,#0040A0,#2465C5);
+      color: #fff;
+      display: grid; place-items: center;
+      font-family: 'Tektur', monospace;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .task-detail__customer-name {
+      font-weight: 700;
+      font-size: 14.5px;
+      color: var(--c-ink);
+    }
+    .task-detail__customer-meta {
+      font-size: 12px;
+      color: var(--c-mute);
+      margin-top: 2px;
+    }
+    .task-detail__customer-rating {
+      font-family: 'Tektur', monospace;
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--c-orange-deep);
+    }
+
+    .task-detail__cta {
+      display: grid;
+      gap: 10px;
+      margin-top: 22px;
+      padding-top: 22px;
+      border-top: 1px solid var(--c-border);
+    }
+    .task-detail__cta .btn { width: 100%; justify-content: center; }
+    .task-detail__cta .btn-accent {
+      background: var(--c-orange);
+      color: #fff;
+      padding: 16px 24px;
+      font-size: 16px;
+      border-radius: 14px;
+      font-family: 'Tektur', monospace;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border: none; cursor: pointer;
+      transition: background .15s, transform .15s;
+    }
+    .task-detail__cta .btn-accent:hover { background: var(--c-orange-deep); transform:translateY(-1px); }
+    .task-detail__cta .btn-ghost {
+      background: var(--c-cream);
+      color: var(--c-ink);
+      padding: 14px 22px;
+      font-size: 14px;
+      border-radius: 12px;
+      font-family: 'Onest','Manrope',sans-serif;
+      font-weight: 600;
+      border: none; cursor: pointer;
+    }
+
+    .task-detail__notice {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: var(--c-blue-soft);
+      border-radius: 12px;
+      font-family: 'Onest','Manrope',sans-serif;
+      font-size: 12.5px;
+      color: var(--c-blue-deep);
+      line-height: 1.5;
+    }
+
+    .task-detail__empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--c-mute);
+    }
+
+    /* ─── Empty state ─── */
+    .tasks-empty {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--c-mute);
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useEffect } = React;
+
+/* ─── Demo data ─────────────────────────────────────── */
+const TASKS = [
+  {
+    id: 1,
+    category: "Дизайн", catId: "design",
+    title: "Оформление соцсети для сети кофеен",
+    pay: 7500, payType: "fixed",
+    place: "Удалённо", city: "Любой",
+    deadline: "До 24 апреля",
+    posted: "20 апреля",
+    duration: "5–7 дней",
+    skills: ["Дизайн в Figma", "SMM", "Сторис"],
+    description: `Нужно собрать комплект визуалов для соцсетей кофейни «Север» — 6 постов и 12 сторис под весеннее меню.
+
+Что входит:
+• Адаптация фотографий из ассетов кафе
+• Текстовая разметка по гайдлайну (есть бренд-бук)
+• Разделение на сетки для VK и Instagram
+
+Стилистика: минимализм, северные цвета. Референсы пришлю в чате.`,
+    requirements: "Опыт в Figma, понимание сторис и постовой сетки. Желательно — кейсы с локальным бизнесом.",
+    customer: { name: "Кофейня «Север»", initials: "СВ", rating: 4.8, deals: 6, verified: true },
+    responses: 8, views: 142, urgent: false, pro: false
+  },
+  {
+    id: 2,
+    category: "Ивент", catId: "events",
+    title: "Сопровождение гостей форума «Югра-Экспо»",
+    pay: 4200, payType: "fixed",
+    place: "Югра-Экспо", city: "Ханты-Мансийск",
+    deadline: "26 апреля",
+    posted: "20 апреля",
+    duration: "2 дня (10:00–18:00)",
+    skills: ["Координация", "Хостес", "Промо"],
+    description: `Двухдневный отраслевой форум, нужны 4 человека на сопровождение делегаций по стендам.
+
+Что предстоит:
+• Встреча гостей у входа
+• Сопровождение по 4 павильонам, краткий рассказ
+• Помощь в трансфере между секциями
+• Ввод посещений в CRM
+
+Питание и бейдж — за наш счёт. Дресс-код — деловой.`,
+    requirements: "Опрятный внешний вид, опыт работы на мероприятиях. Английский B1+ — большой плюс.",
+    customer: { name: "Югра-Экспо", initials: "ЮЭ", rating: 4.9, deals: 28, verified: true },
+    responses: 12, views: 220, urgent: true, pro: false
+  },
+  {
+    id: 3,
+    category: "IT", catId: "it",
+    title: "Доработка лендинга на Tilda",
+    pay: 12000, payType: "fixed",
+    place: "Удалённо", city: "Любой",
+    deadline: "До 30 апреля",
+    posted: "18 апреля",
+    duration: "До 10 дней",
+    skills: ["Tilda", "HTML/CSS", "JavaScript"],
+    description: `Готовый лендинг на Tilda нужно «довести до ума»: добавить квиз, починить пару форм, ускорить загрузку.
+
+Что нужно сделать:
+• Подключить квиз через ZeroBlock + JS
+• Заменить шрифты в кастомных блоках
+• Настроить цели в Метрике и события в форме
+• Адаптировать под мобилку (сейчас плывёт)
+
+Доступы предоставим. На проверке — финальные правки 2–3 итерации.`,
+    requirements: "Опыт работы с Tilda Pro, чистый HTML/CSS. Базовый JS для подключения квиза.",
+    customer: { name: "Студия «Полюс»", initials: "СП", rating: 4.7, deals: 41, verified: true },
+    responses: 14, views: 310, urgent: false, pro: true
+  },
+  {
+    id: 4,
+    category: "Контент", catId: "content",
+    title: "Reels для салона красоты, 5 шт.",
+    pay: 8000, payType: "fixed",
+    place: "Ханты-Мансийск", city: "Ханты-Мансийск",
+    deadline: "До 5 мая",
+    posted: "16 апреля",
+    duration: "1 день съёмки + монтаж",
+    skills: ["Reels-монтаж", "Фотосъёмка", "SMM"],
+    description: `Снять 5 коротких Reels по сценарию: 3 «процесс» и 2 «результат / до-после».
+
+Что входит:
+• Съёмка в салоне 1 день (есть моделей-сотрудников)
+• Монтаж в CapCut/Premiere
+• Подбор музыки и хук-фразы
+• Загрузка в Reels и TikTok с описаниями
+
+Сценарии и музыкальные референсы готовы. Нужны вертикалки 1080×1920.`,
+    requirements: "Опыт монтажа коротких видео, своё оборудование (камера/телефон с хорошей оптикой).",
+    customer: { name: "Beauty-студия «Лава»", initials: "ЛВ", rating: 4.6, deals: 4, verified: false },
+    responses: 5, views: 87, urgent: false, pro: false
+  },
+  {
+    id: 5,
+    category: "Ассистенс", catId: "assist",
+    title: "Расшифровка интервью, 3 часа",
+    pay: 3000, payType: "fixed",
+    place: "Удалённо", city: "Любой",
+    deadline: "До 22 апреля",
+    posted: "20 апреля",
+    duration: "2–3 дня",
+    skills: ["Расшифровка аудио", "Word"],
+    description: `Расшифровка трёх интервью по 1 часу каждое (записи MP3 хорошего качества). Темы — урбанистика и экология.
+
+Требования:
+• Тайм-коды через каждые 5 минут
+• Удалить «эээ», паузы и повторы
+• Разметить реплики «И — интервьюер», «Г — гость»
+• Сдать в .docx и .txt`,
+    requirements: "Грамотный русский, скорость печати от 250 знаков/мин.",
+    customer: { name: "Радио «Югра»", initials: "РЮ", rating: 5.0, deals: 14, verified: true },
+    responses: 4, views: 56, urgent: false, pro: false
+  },
+  {
+    id: 6,
+    category: "Перевод", catId: "lang",
+    title: "Перевод инструкции с английского, 12 стр.",
+    pay: 5400, payType: "fixed",
+    place: "Удалённо", city: "Любой",
+    deadline: "До 28 апреля",
+    posted: "19 апреля",
+    duration: "5 дней",
+    skills: ["Английский", "Технический перевод"],
+    description: `Перевод 12-страничной инструкции к промышленному оборудованию (лазерный резак).
+
+Условия:
+• Сохранить нумерацию и форматирование
+• Глоссарий технических терминов мы пришлём
+• Сдать .docx с трекингом изменений
+• Возможны 1–2 правки от редактора
+
+PDF и глоссарий вышлю в первый же день.`,
+    requirements: "Английский C1, опыт технических переводов. Знание промышленной лексики — плюс.",
+    customer: { name: "ООО «Северснаб»", initials: "СС", rating: 4.7, deals: 22, verified: true },
+    responses: 6, views: 120, urgent: false, pro: false
+  },
+  {
+    id: 7,
+    category: "IT", catId: "it",
+    title: "Telegram-бот для заявок в автосервис",
+    pay: 18000, payType: "fixed",
+    place: "Удалённо", city: "Любой",
+    deadline: "До 15 мая",
+    posted: "21 апреля",
+    duration: "2 недели",
+    skills: ["Python", "aiogram", "Чат-боты Telegram"],
+    description: `Простой Telegram-бот: пользователь оставляет заявку (марка, модель, проблема, телефон), бот отправляет в группу администраторов.
+
+Чего хотим:
+• Inline-кнопки для выбора услуги
+• Сохранение в Google Sheets
+• Уведомление мастеру в чат
+• Статусы: «новая → в работе → готово»
+
+ТЗ подробное, есть моки экранов и текст сообщений.`,
+    requirements: "Опыт с aiogram/python-telegram-bot, работа с Google API.",
+    customer: { name: "Автосервис «Полярник»", initials: "АП", rating: 4.5, deals: 3, verified: false },
+    responses: 7, views: 188, urgent: false, pro: true
+  },
+  {
+    id: 8,
+    category: "Копирайтинг", catId: "content",
+    title: "10 текстов для постов в Telegram-канал",
+    pay: 4500, payType: "fixed",
+    place: "Удалённо", city: "Любой",
+    deadline: "До 27 апреля",
+    posted: "20 апреля",
+    duration: "5–7 дней",
+    skills: ["Копирайтинг", "Telegram"],
+    description: `Канал об экологии Югры. Нужно 10 постов на 800–1500 знаков с подобранными визуалами.
+
+Темы дам в брифе (готов список из 25, выбираем 10). Tone of voice — экспертно-дружелюбный, без жаргона. Пример канала и стилевого ориентира пришлю.`,
+    requirements: "Опыт ведения каналов, понимание экологической тематики приветствуется.",
+    customer: { name: "Эко-сообщество «Югра»", initials: "ЭЮ", rating: 4.9, deals: 9, verified: true },
+    responses: 11, views: 162, urgent: false, pro: false
+  }
+];
+
+const CATEGORIES = [
+  { id: "all",     label: "Все" },
+  { id: "events",  label: "Ивенты" },
+  { id: "it",      label: "IT" },
+  { id: "design",  label: "Дизайн" },
+  { id: "content", label: "Контент" },
+  { id: "assist",  label: "Ассистенс" },
+  { id: "lang",    label: "Языки" },
+];
+
+const QUICK_FILTERS = [
+  { id: "remote",   label: "Удалённо",      check: (t) => t.place === "Удалённо" },
+  { id: "urgent",   label: "Срочные",       check: (t) => t.urgent },
+  { id: "pro",      label: "PRO-задачи",    check: (t) => t.pro },
+  { id: "high",     label: "От 10 000 ₽",   check: (t) => t.pay >= 10000 },
+];
+
+/* ─── Header ─── */
+function Header() {
+  return (
+    <header className="site-header">
+      <div className="site-header__inner">
+        <a className="logo" href="index.html" aria-label="СтудРадар">
+          <span className="logo__mark">
+            <svg viewBox="0 0 63.408 70.213" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M 28.347 26.498 L 34.466 26.498 C 34.846 24.008 35.141 21.602 35.563 19.239 C 36.406 14.061 38.38 9.133 41.345 4.805 C 42.002 3.874 42.751 3.011 43.582 2.231 C 44.304 1.499 45.169 0.924 46.124 0.544 C 47.08 0.163 48.103 -0.015 49.131 0.021 C 50.158 0.057 51.167 0.305 52.093 0.751 C 53.02 1.197 53.844 1.83 54.513 2.611 C 57.413 5.569 59.518 9.213 60.632 13.204 C 63.319 22.042 64.067 31.355 62.827 40.509 C 62.279 44.759 61.26 48.935 59.788 52.959 C 58.695 56.082 56.952 58.937 54.675 61.338 C 52.399 63.738 49.639 65.629 46.578 66.886 C 41.496 69.287 35.907 70.418 30.291 70.183 C 24.674 69.947 19.199 68.353 14.335 65.535 C 11.412 63.898 8.855 61.679 6.823 59.015 C 4.79 56.351 3.325 53.299 2.518 50.047 C 0.331 42.416 -0.441 34.449 0.24 26.54 C 0.519 20.095 2.113 13.776 4.924 7.97 C 5.882 6.077 7.104 4.33 8.554 2.779 C 9.277 1.868 10.206 1.141 11.265 0.659 C 12.324 0.178 13.482 -0.046 14.645 0.008 C 15.807 0.061 16.94 0.39 17.95 0.968 C 18.96 1.545 19.819 2.354 20.455 3.328 C 23.133 6.463 25.015 10.198 25.941 14.216 C 26.827 17.804 27.672 22.868 28.347 26.498 Z M 41.936 51.819 C 41.092 53.001 40.29 54.014 39.615 55.111 C 38.94 56.209 39.615 57.095 40.797 57.01 C 41.997 56.961 43.195 56.848 44.384 56.673 C 46.178 56.439 47.992 56.907 49.448 57.981 C 50.461 58.699 51.474 59.458 52.529 60.091 C 52.75 60.183 52.986 60.23 53.225 60.23 C 53.464 60.23 53.701 60.183 53.922 60.091 C 54.238 59.727 54.417 59.265 54.428 58.783 C 54.491 58.01 54.491 57.234 54.428 56.462 C 54.146 55.187 54.162 53.865 54.477 52.598 C 54.792 51.331 55.396 50.154 56.243 49.161 C 56.845 48.445 57.368 47.667 57.804 46.839 C 57.927 46.677 58.001 46.482 58.015 46.279 C 58.03 46.076 57.986 45.873 57.888 45.694 C 57.789 45.516 57.642 45.37 57.462 45.273 C 57.283 45.177 57.079 45.135 56.876 45.151 C 55.441 45.151 54.006 45.405 52.656 45.531 C 53.249 46.889 53.336 48.414 52.903 49.83 C 52.469 51.247 51.543 52.461 50.292 53.254 C 48.939 54.036 47.35 54.304 45.815 54.01 C 44.281 53.715 42.904 52.878 41.936 51.651 Z M 11.634 45.32 C 10.073 45.32 8.68 45.067 7.414 45.067 C 6.148 45.067 5.979 45.911 6.528 46.797 C 7.076 47.684 8.005 48.907 8.765 49.92 C 9.851 51.276 10.366 53.002 10.199 54.731 C 10.038 55.964 9.94 57.203 9.904 58.445 C 9.885 58.706 9.92 58.969 10.007 59.216 C 10.094 59.463 10.232 59.689 10.41 59.88 C 10.641 59.989 10.894 60.046 11.149 60.046 C 11.404 60.046 11.657 59.989 11.888 59.88 C 12.863 59.268 13.807 58.606 14.715 57.897 C 15.442 57.325 16.275 56.903 17.166 56.657 C 18.058 56.411 18.989 56.344 19.906 56.462 C 21.138 56.623 22.378 56.722 23.62 56.757 C 24.759 56.757 25.308 55.913 24.717 54.942 C 24.126 53.972 23.114 52.748 22.312 51.651 C 18.345 54.309 16.192 54.774 13.871 53.212 C 12.622 52.376 11.711 51.123 11.302 49.677 C 10.892 48.232 11.01 46.687 11.634 45.32 Z M 30.921 60.007 L 31.934 61.779 L 33.2 60.387 L 32.103 58.91 L 30.921 60.007 Z"/>
+            </svg>
+          </span>
+          <span>СтудРадар</span>
+        </a>
+        <nav className="nav">
+          <a href="index.html">Главная</a>
+          <a href="tasks.html" style={{color:"var(--c-blue-deep)",fontWeight:700}}>Задачи</a>
+          <a href="performers.html">Исполнители</a>
+          <a href="index.html#how">Как это работает</a>
+          <a href="index.html#faq">FAQ</a>
+        </nav>
+        <div className="header__right">
+          <a className="btn-login" href="cabinet.html">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+            <span>Войти</span>
+          </a>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/* ─── Task list card ─── */
+function TaskCard({ t, active, onClick }) {
+  return (
+    <article className={"task-card " + (active ? "is-active" : "")} onClick={onClick}>
+      <div>
+        <div className="task-card__head">
+          <span className="task-card__cat">{t.category}</span>
+          {t.urgent && <span className="task-card__urgent">⚡ Срочно</span>}
+          {t.pro && <span className="task-card__urgent" style={{background:"#FFF6E0",color:"#B5891A"}}>PRO</span>}
+        </div>
+        <h3 className="task-card__title">{t.title}</h3>
+        <div className="task-card__meta">
+          <span>📍 {t.place}</span>
+          <span>📅 {t.deadline}</span>
+          <span>⏱ {t.duration}</span>
+        </div>
+      </div>
+      <div className="task-card__pay">
+        {t.pay.toLocaleString("ru-RU")} ₽
+        <sub>за задание</sub>
+      </div>
+
+      <div className="task-card__skills">
+        {t.skills.slice(0, 4).map(s => <span key={s} className="task-card__skill">{s}</span>)}
+      </div>
+
+      <div className="task-card__bottom">
+        <div className="task-card__customer">
+          <div className="task-card__customer-avatar">{t.customer.initials}</div>
+          <span>{t.customer.name} · ★ {t.customer.rating}</span>
+        </div>
+        <div className="task-card__resp">
+          <strong>{t.responses}</strong> откликов · {t.views} просмотров
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/* ─── Detail panel ─── */
+function TaskDetail({ t }) {
+  if (!t) {
+    return (
+      <div className="task-detail">
+        <div className="task-detail__empty">
+          <div style={{fontSize:48,marginBottom:12}}>👈</div>
+          <div style={{fontFamily:"'Tektur',monospace",fontSize:18,fontWeight:700,textTransform:"uppercase",color:"var(--c-navy)",marginBottom:6}}>Выберите задачу</div>
+          <div style={{fontSize:14}}>Кликни на любую карточку слева, чтобы посмотреть детали и откликнуться.</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="task-detail">
+      <div className="task-detail__head">
+        <span className="task-detail__cat">{t.category}</span>
+        <h2 className="task-detail__title">{t.title}</h2>
+        <div className="task-detail__pay">
+          {t.pay.toLocaleString("ru-RU")} ₽
+          <sub>{t.payType === "fixed" ? "фиксированный бюджет" : "договорной"}</sub>
+        </div>
+      </div>
+
+      <div className="task-detail__quick">
+        <div className="task-detail__quick-item">
+          <div className="task-detail__quick-label">Формат</div>
+          <div className="task-detail__quick-val">{t.place}</div>
+        </div>
+        <div className="task-detail__quick-item">
+          <div className="task-detail__quick-label">Город</div>
+          <div className="task-detail__quick-val">{t.city}</div>
+        </div>
+        <div className="task-detail__quick-item">
+          <div className="task-detail__quick-label">Дедлайн</div>
+          <div className="task-detail__quick-val">{t.deadline}</div>
+        </div>
+        <div className="task-detail__quick-item">
+          <div className="task-detail__quick-label">Длительность</div>
+          <div className="task-detail__quick-val">{t.duration}</div>
+        </div>
+        <div className="task-detail__quick-item">
+          <div className="task-detail__quick-label">Опубликована</div>
+          <div className="task-detail__quick-val">{t.posted}</div>
+        </div>
+        <div className="task-detail__quick-item">
+          <div className="task-detail__quick-label">Откликов</div>
+          <div className="task-detail__quick-val">{t.responses} из ∞</div>
+        </div>
+      </div>
+
+      <div className="task-detail__section">
+        <h4>// Описание</h4>
+        <p>{t.description}</p>
+      </div>
+
+      <div className="task-detail__section">
+        <h4>// Требования</h4>
+        <p>{t.requirements}</p>
+      </div>
+
+      <div className="task-detail__section">
+        <h4>// Нужные навыки</h4>
+        <div className="task-detail__skills">
+          {t.skills.map(s => <span key={s}>{s}</span>)}
+        </div>
+      </div>
+
+      <div className="task-detail__section">
+        <h4>// Заказчик</h4>
+        <div className="task-detail__customer">
+          <div className="task-detail__customer-avatar">{t.customer.initials}</div>
+          <div>
+            <div className="task-detail__customer-name">
+              {t.customer.name} {t.customer.verified && <span style={{color:"var(--c-green-deep)",fontSize:12}}>✓</span>}
+            </div>
+            <div className="task-detail__customer-meta">{t.customer.deals} закрытых сделок</div>
+          </div>
+          <div className="task-detail__customer-rating">{t.customer.rating} ★</div>
+        </div>
+      </div>
+
+      <div className="task-detail__cta">
+        <button className="btn-accent">Откликнуться ▸▸▸</button>
+        <button className="btn-ghost">Сохранить в избранное</button>
+        <button className="btn-ghost">Поделиться</button>
+        <div className="task-detail__notice">
+          💡 Эскроу гарантирует оплату — деньги заказчика блокируются на платформе и переходят к тебе после приёмки работы.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main App ─── */
+function App() {
+  const [activeCat, setActiveCat] = useState("all");
+  const [quickActive, setQuickActive] = useState(new Set());
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("fresh");
+  const [activeId, setActiveId] = useState(TASKS[0].id);
+
+  const toggleQuick = (id) => {
+    const next = new Set(quickActive);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setQuickActive(next);
+  };
+
+  const filtered = useMemo(() => {
+    let arr = [...TASKS];
+    if (activeCat !== "all") arr = arr.filter(t => t.catId === activeCat);
+    quickActive.forEach((id) => {
+      const f = QUICK_FILTERS.find(q => q.id === id);
+      if (f) arr = arr.filter(f.check);
+    });
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      arr = arr.filter(t =>
+        t.title.toLowerCase().includes(q) ||
+        t.skills.some(s => s.toLowerCase().includes(q)) ||
+        t.customer.name.toLowerCase().includes(q)
+      );
+    }
+    if (sort === "pay-desc") arr.sort((a, b) => b.pay - a.pay);
+    else if (sort === "pay-asc") arr.sort((a, b) => a.pay - b.pay);
+    else if (sort === "popular") arr.sort((a, b) => b.responses - a.responses);
+    return arr;
+  }, [activeCat, quickActive, search, sort]);
+
+  const active = filtered.find(t => t.id === activeId) || filtered[0];
+
+  /* keep selection valid when filters change */
+  useEffect(() => {
+    if (filtered.length > 0 && !filtered.find(t => t.id === activeId)) {
+      setActiveId(filtered[0].id);
+    }
+  }, [filtered, activeId]);
+
+  return (
+    <>
+      <Header />
+      <main>
+        <section className="tasks-shell tasks-hero">
+          <div className="tasks-hero__top">
+            <h1 className="t-display t-display-lg" style={{margin:0}}>Каталог задач</h1>
+            <span className="tasks-hero__count">{filtered.length}</span>
+          </div>
+
+          <div className="tasks-search">
+            <input
+              className="tasks-search__input"
+              type="text"
+              placeholder="Поиск по навыку, заказчику, ключевому слову…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <a className="btn btn-primary" href="cabinet.html"
+               style={{whiteSpace:"nowrap",borderRadius:14,padding:"14px 24px"}}>
+              Мой кабинет
+            </a>
+          </div>
+
+          <div className="tasks-filters">
+            {CATEGORIES.map(c => (
+              <button key={c.id}
+                className={"tasks-filter " + (activeCat === c.id ? "active" : "")}
+                onClick={() => setActiveCat(c.id)}>
+                {c.label}
+              </button>
+            ))}
+            <div style={{width:1,background:"var(--c-border)",margin:"0 6px"}}/>
+            {QUICK_FILTERS.map(q => (
+              <button key={q.id}
+                className={"tasks-filter " + (quickActive.has(q.id) ? "active" : "")}
+                onClick={() => toggleQuick(q.id)}>
+                {q.label}
+              </button>
+            ))}
+            <div className="tasks-sort">
+              Сортировка:
+              <select value={sort} onChange={e => setSort(e.target.value)}>
+                <option value="fresh">Сначала свежие</option>
+                <option value="pay-desc">По убыванию оплаты</option>
+                <option value="pay-asc">По возрастанию оплаты</option>
+                <option value="popular">По популярности</option>
+              </select>
+            </div>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="tasks-empty">
+              <div style={{fontSize:48,marginBottom:12}}>🔍</div>
+              <div style={{fontFamily:"'Tektur',monospace",fontSize:22,fontWeight:700,textTransform:"uppercase",color:"var(--c-navy)"}}>Под фильтры ничего не нашлось</div>
+              <div style={{marginTop:8}}>Сбрось фильтры или попробуй другой запрос</div>
+            </div>
+          ) : (
+            <div className="tasks-grid">
+              <div className="tasks-list">
+                {filtered.map(t => (
+                  <TaskCard key={t.id} t={t} active={active && active.id === t.id} onClick={() => setActiveId(t.id)}/>
+                ))}
+              </div>
+              <TaskDetail t={active}/>
+            </div>
+          )}
+        </section>
+      </main>
+
+      <footer style={{borderTop:"1px solid var(--c-border)",padding:"32px var(--pad-x)",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:16,maxWidth:1480,margin:"0 auto"}}>
+        <a href="index.html" className="logo" style={{fontSize:18}}>
+          <span style={{fontFamily:"'Tektur',monospace",fontWeight:700,color:"var(--c-navy)"}}>СтудРадар</span>
+        </a>
+        <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:12,color:"var(--c-mute)"}}>
+          © 2026 СтудРадар · ХМАО-Югра
+        </span>
+      </footer>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
